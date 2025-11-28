@@ -1,0 +1,44 @@
+# Pakiety Pythona / środowiska wirtualne
+__pycache__/
+.venv/
+venv/
+*.pyc
+
+# Pliki systemowe
+.DS_Store
+Thumbs.db
+
+# Katalogi kompilacji/wyjściowe
+build/
+dist/
+
+# Pliki logów
+*.log
+
+# Jeśli to jest projekt ML/neural-network i masz ogromny folder z danymi
+data/
+dataset/
+# Pliki Python Stubs
+*.pyi
+
+# Typowe foldery bibliotek i środowisk wirtualnych Pythona
+.venv/
+venv/
+env/
+lib/
+lib64/
+__pycache__/
+
+# Pliki generowane przez PyCharm lub inne IDE
+.idea/
+.vscode/
+
+# ZDJĘCIA I DUŻE ZBIORY DANYCH
+# To są przykłady. Jeśli Twoje zdjęcia są w folderze 'dataset', dodaj jego nazwę.
+dataset/
+images/
+photos/
+*.jpg
+*.jpeg
+*.png
+*.gif
