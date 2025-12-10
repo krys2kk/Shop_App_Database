@@ -240,11 +240,11 @@ def get_product_price(p_id):
     SELECT price
     FROM product_prices
     WHERE product_id = ? AND start_date <= ?
-    ORDER_BY date DESC
+    ORDER BY start_date DESC
     LIMIT 1;
     """
     current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    cur.execute(sql_query, (p_id, current_date))
+    cur.execute(sql_query, (p_id, current_date,))
     conn.close()
 
 def get_current_stock(p_id):
@@ -278,15 +278,15 @@ def get_best_selling_products(limit = 10):
     try:
         sql_query = """
         SELECT
-            p.product_id,
-            p.name AS p.product_name,
+            p.id,
+            p.name AS product_name,
             SUM(od.quantity) AS total_sold_quantity
         FROM
             products p
         INNER JOIN
-            order_details od ON p.product_id = on.product_id
+            order_details od ON p.id = od.product_id
         GROUP BY
-            p.product_name, p.name
+            product_name, p.name
         ORDER BY
             total_sold_quantity DESC
         LIMIT ?;
@@ -307,23 +307,23 @@ def get_customer_history(c_id):
     try:
         sql_query = """
         SELECT
-            o.order_id
-            o.order_date
-            o.status
-            od.product_id
-            od.quantity
-            od.unit_price
+            o.id AS order_id,
+            o.order_date,
+            o.status,
+            od.product_id,
+            od.quantity,
+            od.unit_price,
             p.name AS product_name
         FROM
             orders o
         INNER JOIN
-            order_details od ON o.order_id = od.order_id
+            order_details od ON order_id = od.order_id
         INNER JOIN
-            products p ON od.product_id = p.product_id
+            products p ON od.product_id = p.id
         WHERE
             customer_id = ?
         ORDER BY
-            o.order_date DESC, o.order_id DESC;
+            o.order_date DESC, order_id DESC;
         """
         conn.execute(sql_query, (c_id,))
         results = [dict(row) for row in cur.fetchall()]

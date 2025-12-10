@@ -80,7 +80,7 @@ def create_customer():
 
 
 @app.route('/api/customers/<int:customer_id>', methods=['DELETE'])
-def delete_customer(customer_id):
+def delete_customer_data(customer_id):
     """
     Usuwa lub anonimizuje klienta
     ---
@@ -93,7 +93,7 @@ def delete_customer(customer_id):
         description: Klient usunięty/anonimizowany
     """
     try:
-        result = db.delete_or_anonimize_customer(customer_id)
+        result = db.delete_customer_data(customer_id)
         return jsonify({"success": True, "message": result}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -545,3 +545,4 @@ def internal_error(e):
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+

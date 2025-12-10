@@ -46,5 +46,6 @@ def seed_database():
                 quantity=-quantity,
                 movement_date=datetime.now().date()
             )
+    db.delete_customer_data(5)
 if __name__ == "__main__":
     seed_database()
