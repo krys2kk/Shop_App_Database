@@ -1,10 +1,12 @@
+import os
+import sys
 import sqlite3
 from datetime import datetime
 
-DB_file = "sklep.db"
+DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sklep.db')
 
 def get_connection():
-    return sqlite3.connect(DB_file)
+    return sqlite3.connect(DB_FILE)
 
 def add_customer(name, email, phone, address):
     conn = get_connection()
@@ -14,7 +16,7 @@ def add_customer(name, email, phone, address):
     """, (name, email, phone, address))
     conn.commit()
     conn.close()
-    print(f"Dodano klienta (name)")
+    print(f"Dodano klienta {name}")
 
 def list_customers():
     conn = get_connection()
@@ -37,13 +39,29 @@ def delete_customer_data(customer_id):
             address = 'nieznany',
             phone = '000000000'
         WHERE 
-            customer_id = ?;
+            id = ?;
         """
         cur.execute(sql_query, (customer_id, customer_id, customer_id))
         if cur.rowcount > 0:
-            print(f"{customer_id} klient anonimowy")
+            print(f"Klient o id {customer_id} anonimizowany")
         else:
-            print(f"Brak kilenta o id {customer_id}")
+            print(f"Brak klienta o id {customer_id}")
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Błąd SQLite: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+def delete_customer_completely(customer_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("DELETE FROM customers WHERE id = ?", (customer_id,))
+        if cur.rowcount > 0:
+            print(f"Klient o id {customer_id} całkowicie usunięty")
+        else:
+            print(f"Brak klienta o id {customer_id}")
         conn.commit()
     except sqlite3.Error as e:
         print(f"Błąd SQLite: {e}")
@@ -58,14 +76,13 @@ def add_product(name, description):
                    VALUES(?, ?)""", (name, description))
     conn.commit()
     conn.close()
-    print(f"Dodano przedmiot (name)")
+    print(f"Dodano przedmiot {name}")
 
 def list_products():
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute("""SELECT * FROM products""")
-    conn.commit()
     results = [dict(row) for row in cur.fetchall()]
     conn.close()
     return results
@@ -90,11 +107,11 @@ def add_inventory_movement(product_id, type, quantity, movement_date):
     finally:
         conn.close()
 
-def list_inventory_movements():
+def list_inventory_movements(p_id):
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("""SELECT * FROM inventory_movements""")
+    cur.execute("""SELECT * FROM inventory_movements WHERE product_id = ?""", (p_id,))
     results = [dict(row) for row in cur.fetchall()]
     conn.close()
     return results
@@ -138,7 +155,7 @@ def add_order_details(order_id, product_id, quantity, unit_price):
     cur = conn.cursor()
     try:
         sql_query = """
-        INSERT INTO order_details (order_id, product_id, quantity, unit_price)
+            INSERT INTO order_details (order_id, product_id, quantity, unit_price)
             VALUES(?, ?, ?, ?)
         """
         cur.execute(sql_query, (order_id, product_id, quantity, unit_price))
@@ -160,7 +177,7 @@ def update_product_price(product_id, price, start_date):
         print("Błąd: Data musi być obiektem datetime lub string.")
     try:
         sql_query = """
-        INSERT INTO product_prices (product_id, price, start_date)
+            INSERT INTO product_prices (product_id, price, start_date)
             VALUES(?, ?, ?)
         """
         cur.execute(sql_query, (product_id, price, formatted_date))
@@ -171,24 +188,28 @@ def update_product_price(product_id, price, start_date):
     finally:
         conn.close()
 
-def updete_order_status(id, update):
+def update_order_status(order_id, status):
     conn = get_connection()
     cur = conn.cursor()
     try:
         sql_query = """ 
         UPDATE orders
-        status = ?
-        WHERE order_id = ?;
+        SET status = ?
+        WHERE id = ?;
         """
-        cur.execute(sql_query, (id, update))
+        cur.execute(sql_query, (status, order_id))
         conn.commit()
+        if cur.rowcount > 0:
+            print(f"Status zamówienia {order_id} zaktualizowany.")
+        else:
+            print(f"Brak zamówienia o id {order_id}")
     except sqlite3.Error as e:
         print(f"Błąd SQLite: {e}")
         conn.rollback()
     finally:
         conn.close()
 
-def update_customer_info(c_id, c_name, c_email, c_phone, c_address, ):
+def update_customer_info(c_id, c_name, c_email, c_phone, c_address):
     conn = get_connection()
     cur = conn.cursor()
     try:
@@ -198,37 +219,44 @@ def update_customer_info(c_id, c_name, c_email, c_phone, c_address, ):
             name = ?,
             email = ?,
             phone = ?,
-            address = ?,
+            address = ?
         WHERE
-            customer_id = ?;
+            id = ?;
         """
         cur.execute(sql_query, (c_name, c_email, c_phone, c_address, c_id))
         conn.commit()
         if cur.rowcount > 0:
-            print(f"Dane klienta {c_id} zmaienione.")
+            print(f"Dane klienta {c_id} zaktualizowane.")
         else:
-            print(f"Brak kilenta o id {c_id}")
+            print(f"Brak klienta o id {c_id}")
     except sqlite3.Error as e:
         print(f"Błąd SQLite: {e}")
         conn.rollback()
     finally:
         conn.close()
 
-def update_product_definition(p_id, p_name, p_desc):
+def update_product_description(p_id, description):
     conn = get_connection()
     cur = conn.cursor()
     try:
-        sql_query = """
-        UPDATE products
-        SET
-            name = ?,
-            description = ?,
-        WHERE
-            product_id = ?;
-        """
-        conn.execute(sql_query, (p_name, p_desc, p_id))
+        cur.execute("UPDATE products SET description = ? WHERE id = ?", (description, p_id))
+        conn.commit()
+        print(f"Opis produktu {p_id} zaktualizowany")
     except sqlite3.Error as e:
-        print(f"Błąd SQLite {e}")
+        print(f"Błąd SQLite: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+def update_product_name(p_id, name):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE products SET name = ? WHERE id = ?", (name, p_id))
+        conn.commit()
+        print(f"Nazwa produktu {p_id} zaktualizowana na: {name}")
+    except sqlite3.Error as e:
+        print(f"Błąd SQLite: {e}")
         conn.rollback()
     finally:
         conn.close()
@@ -236,22 +264,32 @@ def update_product_definition(p_id, p_name, p_desc):
 def get_product_price(p_id):
     conn = get_connection()
     cur = conn.cursor()
-    sql_query = """
-    SELECT price
-    FROM product_prices
-    WHERE product_id = ? AND start_date <= ?
-    ORDER BY start_date DESC
-    LIMIT 1;
-    """
-    current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    cur.execute(sql_query, (p_id, current_date,))
-    conn.close()
+    try:
+        sql_query = """
+        SELECT price
+        FROM product_prices
+        WHERE product_id = ? AND start_date <= ?
+        ORDER BY start_date DESC
+        LIMIT 1;
+        """
+        current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cur.execute(sql_query, (p_id, current_date,))
+        result = cur.fetchone()
+        if result and result[0] is not None:
+            return round(float(result[0]), 2)
+        else:
+            return None
+    except sqlite3.Error as e:
+        print(f"Błąd SQLite {e}")
+        return None
+    finally:
+        conn.close()
 
 def get_current_stock(p_id):
-    conn =get_connection()
+    conn = get_connection()
     cur = conn.cursor()
     try:
-        sql_query = """a
+        sql_query = """
         SELECT
             SUM(quantity_change) AS cur_stock
         FROM
@@ -271,7 +309,7 @@ def get_current_stock(p_id):
     finally:
         conn.close()
 
-def get_best_selling_products(limit = 10):
+def get_best_selling_products(limit=10):
     conn = get_connection()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -317,30 +355,30 @@ def get_customer_history(c_id):
         FROM
             orders o
         INNER JOIN
-            order_details od ON order_id = od.order_id
+            order_details od ON o.id = od.order_id
         INNER JOIN
             products p ON od.product_id = p.id
         WHERE
-            customer_id = ?
+            o.customer_id = ?
         ORDER BY
-            o.order_date DESC, order_id DESC;
+            o.order_date DESC, o.id DESC;
         """
-        conn.execute(sql_query, (c_id,))
+        cur.execute(sql_query, (c_id,))
         results = [dict(row) for row in cur.fetchall()]
         if not results:
             print(f"Nie znaleziono klienta {c_id}")
         return results
     except sqlite3.Error as e:
         print(f"Błąd SQLite: {e}")
-        return[]
+        return []
     finally:
         conn.close()
 
 def check_inventory_on_order(products_to_order):
     unavailable_products = []
-    for product_id, desired_quantity in products_to_order:
+    for product_id, desired_quantity, unit_price  in products_to_order:
         current_stock = get_current_stock(product_id)
-        if desired_quantity < current_stock:
+        if desired_quantity > current_stock:
             unavailable_products.append({
                 'product_id': product_id,
                 'available': current_stock,
@@ -360,14 +398,14 @@ def create_full_order_transaction(customer_id, status, order_date, products_list
         is_available, _ = check_inventory_on_order(products_list)
         if not is_available:
             raise ValueError("Brak towaru na magazynie. Transakcja anulowana.")
-        cur.execute("INSERT INTO orders (customer_id, status, order_date), VALUES (?, ?, ?)", (customer_id, status, order_date))
+        cur.execute("INSERT INTO orders (customer_id, status, order_date) VALUES (?, ?, ?)", (customer_id, status, order_date))
         order_id = cur.lastrowid
 
         for product_id, quantity, unit_price in products_list:
             cur.execute("INSERT INTO order_details (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)", (order_id, product_id, quantity, unit_price))
-            movement_date = datetime.now().strftime('%Y-%m-%d %H:%M-%S')
+            movement_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             quantity_change = -quantity
-            cur.execute("INSERT INTO inventory_movements (product_id, movement_type, quantity_change, movement_date) VALUES (?, ?, ?, ?)", (product_id, 'Wydanie-Sprzedaż', quantity_change, movement_date))
+            cur.execute("INSERT INTO inventory_movements (product_id, movement_type, quantity_change, movement_date) VALUES (?, ?, ?, ?)", (product_id, 'wydanie', quantity_change, movement_date))
         conn.commit()
         print(f"Pomyślnie utworzono zamówienie {order_id} i zaktualizowano stany magazynowe.")
         return order_id
@@ -375,5 +413,104 @@ def create_full_order_transaction(customer_id, status, order_date, products_list
         print(f"Błąd transakcji: {e}. Wycofuję zmiany.")
         conn.rollback()
         return None
+    finally:
+        conn.close()
+
+def get_orders():
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    try:
+        sql_query = """
+        SELECT
+            o.id AS order_id,
+            o.customer_id,
+            c.name AS customer_name,
+            o.order_date,
+            o.status
+        FROM
+            orders o
+        INNER JOIN
+            customers c ON o.customer_id = c.id
+        ORDER BY
+            o.id ASC;
+        """
+        cur.execute(sql_query)
+        results = [dict(row) for row in cur.fetchall()]
+        return results
+    except sqlite3.Error as e:
+        print(f"Błąd SQLite: {e}")
+        return []
+    finally:
+        conn.close()
+
+def delete_order(order_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # First delete order details
+        cur.execute("DELETE FROM order_details WHERE order_id = ?", (order_id,))
+        # Then delete the order
+        cur.execute("DELETE FROM orders WHERE id = ?", (order_id,))
+        conn.commit()
+        print(f"Usunięto zamówienie {order_id}")
+    except sqlite3.Error as e:
+        print(f"Błąd SQLite: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+def get_order_details(order_id):
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    try:
+        sql_query = """
+        SELECT
+            od.product_id,
+            p.name AS product_name,
+            od.quantity,
+            od.unit_price,
+            (od.quantity * od.unit_price) AS total_price
+        FROM
+            order_details od
+        INNER JOIN
+            products p ON od.product_id = p.id
+        WHERE
+            od.order_id = ?
+        ORDER BY
+            od.product_id ASC;
+        """
+        cur.execute(sql_query, (order_id,))
+        results = [dict(row) for row in cur.fetchall()]
+        return results
+    except sqlite3.Error as e:
+        print(f"Błąd SQLite: {e}")
+        return []
+    finally:
+        conn.close()
+
+def get_price_history(product_id):
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    try:
+        sql_query = """
+        SELECT
+            price,
+            start_date
+        FROM
+            product_prices
+        WHERE
+            product_id = ?
+        ORDER BY
+            start_date DESC;
+        """
+        cur.execute(sql_query, (product_id,))
+        results = [dict(row) for row in cur.fetchall()]
+        return results
+    except sqlite3.Error as e:
+        print(f"Błąd SQLite: {e}")
+        return []
     finally:
         conn.close()

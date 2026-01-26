@@ -79,10 +79,10 @@ def create_customer():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/customers/<int:customer_id>', methods=['DELETE'])
+@app.route('/api/customers/<int:customer_id>/anonymize-customer', methods=['DELETE'])
 def delete_customer_data(customer_id):
     """
-    Usuwa lub anonimizuje klienta
+    Anonimizuje klienta
     ---
     parameters:
       - in: path
@@ -98,6 +98,69 @@ def delete_customer_data(customer_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route('/api/customers/<int:customer_id>/delete-customer', methods=['DELETE'])
+def delete_customer_completely(customer_id):
+    """
+    Usuwa klienta całkowicie
+    ---
+    parameters:
+      - in: path
+        name: customer_id
+        type: integer
+    responses:
+      200:
+        description: Klient usunięty całkowicie
+    """
+    try:
+        result = db.delete_customer_completely(customer_id)
+        return jsonify({"success": True, "message": result}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/customers/<int:customer_id>/customer-info', methods=['POST'])
+def update_customer_info(customer_id):
+    """
+    Aktualizuje informacje klienta
+    ---
+    parameters:
+      - in: path
+        name: customer_id
+        type: integer
+      - in: body
+        name: customer
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
+            address:
+              type: string
+    responses:
+      200:
+        description: Informacje klienta zaktualizowane
+    """
+    try:
+        data = request.get_json()
+        name = data.get("name")
+        email = data.get("email")
+        phone = data.get("phone")
+        address = data.get("address")
+
+        if email:
+            if '@' not in email or '.' not in email:
+                return jsonify({"success": False, "error": "Nieprawidłowy format emaila"}), 400
+        if phone:
+            if not phone.replace('+', '').replace('-', '').replace(' ', '').isdigit():
+                return jsonify({"success": False, "error": "Nieprawidłowy format telefonu"}), 400
+
+        db.update_customer_info(customer_id, name, email, phone, address)
+        return jsonify({"success": True, "message": "Informacje klienta zaktualizowane"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 # ==================== PRODUCTS ====================
 
@@ -117,7 +180,7 @@ def list_products():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/products', methods=['POST'])
+@app.route('/api/products/<int:product_id>/create-product', methods=['POST'])
 def create_product():
     """
     Dodaje nowy produkt
@@ -150,7 +213,7 @@ def create_product():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/products/<int:product_id>', methods=['PUT'])
+@app.route('/api/products/<int:product_id>/update-product', methods=['PUT'])
 def update_product(product_id):
     """
     Aktualizuje produkt
@@ -186,7 +249,7 @@ def update_product(product_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/products/<int:product_id>', methods=['DELETE'])
+@app.route('/api/products/<int:product_id>/delete-product', methods=['DELETE'])
 def delete_product(product_id):
     """
     Usuwa produkt
@@ -324,6 +387,107 @@ def add_stock_movement(product_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route('/api/products/<int:product_id>/stock-movement', methods=['GET'])
+def get_stock_movements(product_id):
+    """
+    Pobiera historię ruchów magazynowych dla produktu
+    ---
+    parameters:
+      - in: path
+        name: product_id
+        type: integer
+    responses:
+      200:
+        description: Historia ruchów magazynowych
+    """
+    try:
+        movements = db.list_inventory_movements(product_id)
+        return jsonify({"success": True, "data": movements}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/products/<int:product_id>/product-description', methods=['POST'])
+def update_product_description(product_id):
+    """
+    Aktualizuje opis produktu
+    ---
+    parameters:
+      - in: path
+        name: product_id
+        type: integer
+      - in: body
+        name: description
+        schema:
+          type: object
+          properties:
+            description:
+              type: string
+    responses:
+      200:
+        description: Opis produktu zaktualizowany
+    """
+    try:
+        data = request.get_json()
+        description = data.get("description")
+
+        if not description:
+            return jsonify({"success": False, "error": "Wymagane: description"}), 400
+
+        db.update_product_description(product_id, description)
+        return jsonify({"success": True, "message": "Opis produktu zaktualizowany"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/products/<int:product_id>/product-name', methods=['POST'])
+def update_product_name(product_id):
+    """
+    Aktualizuje nazwę produktu
+    ---
+    parameters:
+      - in: path
+        name: product_id
+        type: integer
+      - in: body
+        name: name
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+    responses:
+      200:
+        description: Nazwa produktu zaktualizowana
+    """
+    try:
+        data = request.get_json()
+        name = data.get("name")
+
+        if not name:
+            return jsonify({"success": False, "error": "Wymagane: name"}), 400
+
+        db.update_product_name(product_id, name)
+        return jsonify({"success": True, "message": "Nazwa produktu zaktualizowana"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/products/<int:product_id>/get-price-history', methods=['GET'])
+def get_price_history(product_id):
+    """
+    Pobiera historię cen dla produktu
+    ---
+    parameters:
+      - in: path
+        name: product_id
+        type: integer
+    responses:
+      200:
+        description: Historia cen produktu
+    """
+    try:
+        history = db.get_price_history(product_id)
+        return jsonify({"success": True, "data": history}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 # ==================== ORDERS ====================
 
@@ -450,7 +614,123 @@ def add_order_item(order_id):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route('/api/orders/<int:order_id>/check-before-order', methods=['CHECK'])
+def check_inventory_on_order(products_to_order):
+    """
+    Sprawdza stan magazynowy przed dodaniem pozycji do zamówienia
+    ---
+    parameters:
+      - in: path
+        name: order_id
+        type: integer
+      - in: body
+        name: products
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: integer
+              quantity:
+                type: integer
+    responses:
+      200:
+        description: Stan magazynowy sprawdzony
+    """
+    try:
+        insufficient_stock = []
+        products_to_order = request.get_json().get("products", [])
+        check_results = db.check_inventory_on_order(products_to_order)
+        if check_results:
+            return jsonify({"success": False, "insufficient_stock": check_results}), 200
+        return jsonify({"success": True, "message": "Wystarczający stan magazynowy"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route('/api/orders/<int:order_id>/delete-order', methods=['DELETE'])
+def delete_order(order_id):
+    """
+    Usuwa zamówienie
+    ---
+    parameters:
+      - in: path
+        name: order_id
+        type: integer
+    responses:
+      200:
+        description: Zamówienie usunięte
+    """
+    try:
+        db.delete_order(order_id)
+        return jsonify({"success": True, "message": "Zamówienie usunięte"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/orders/<int:order_id>/order-details', methods=['GET'])
+def get_order_details(order_id):
+    """
+    Pobiera szczegóły zamówienia
+    ---
+    parameters:
+      - in: path
+        name: order_id
+        type: integer
+    responses:
+      200:
+        description: Szczegóły zamówienia
+    """
+    try:
+        details = db.get_order_details(order_id)
+        return jsonify({"success": True, "data": details}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+@app.route('/api/orders/', methods=['POST'])
+def create_full_order():
+    """
+    Tworzy nowe zamówienie z pozycjami
+    ---
+    parameters:
+      - in: body
+        name: order
+        schema:
+          type: object
+          properties:
+            customer_id:
+              type: integer
+            status:
+              type: string
+            order_date:
+              type: string
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  product_id:
+                    type: integer
+                  quantity:
+                    type: integer
+                  unit_price:
+                    type: number
+    responses:
+      201:
+        description: Zamówienie utworzone
+    """
+    try:
+        data = request.get_json()
+        customer_id = data.get("customer_id")
+        status = data.get("status", "pending")
+        order_date = data.get("order_date")
+        items = data.get("items", [])
+        if not customer_id or not order_date or not items:
+            return jsonify({"success": False, "error": "Wymagane: customer_id, order_date, items"}), 400
+        db.create_full_order_transaction(customer_id, status, order_date, items)
+        return jsonify({"success": True, "message": "Zamówienie utworzone"}), 201
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+  
 # ==================== ADVANCED REPORTS ====================
 
 @app.route('/api/reports/best-selling-products', methods=['GET'])

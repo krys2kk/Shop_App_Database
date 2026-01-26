@@ -1,9 +1,11 @@
+import os
+import sys
 import sqlite3
 
-DB_FILE = "sklep.db"
+DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sklep.db')
 
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
+def init_db(file_path=DB_FILE):
+    conn = sqlite3.connect(file_path)
     cur = conn.cursor()
     cur.executescript("""
     CREATE TABLE IF NOT EXISTS customers (
