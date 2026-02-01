@@ -16,6 +16,8 @@ cd [NAZWA_KATALOGU_PROJEKTU]
 # 2. Konfiguracja Środowiska Wirtualnego
 Zaleca się użycie wirtualnego środowiska (.venv) dla izolacji zależności:
 Bash
+# Gotowy plik
+Jeżeli chcesz odpalić finalną wersję jednym kliknięciem, otwórz SklepInternetowy.exe.
 # Tworzenie środowiska
 python -m venv .venv
 
