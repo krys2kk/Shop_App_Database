@@ -49,28 +49,49 @@ Po uruchomieniu serwera, możesz uzyskać dostęp do API za pomocą narzędzi ta
 Pełna, interaktywna dokumentacja wszystkich punktów końcowych (endpointów) API jest dostępna automatycznie dzięki bibliotece Flasgger:
 # ➡️ Adres Dokumentacji: http://127.0.0.1:5000/apidocs/
 # 🔑 Kluczowe Endpointy
+
 Endpoint Metoda Opis
+
 -/api/health - GET - Sprawdzenie, czy serwer działa poprawnie.
+
 -/api/customers - POST - Dodanie nowego klienta.
+
 -/api/products - GET - Pobranie listy wszystkich produktów.
+
 -/api/products/{id}/stock - GET - Pobranie aktualnego stanu magazynowego.
+
 /api/orders/transaction - POST - Najważniejsza transakcja: Tworzenie zamówienia wraz ze sprawdzeniem zapasów.
+
 # 📂 Kluczowe komponenty aplikacji (Logika i Serwer)
+
 main.py – (Warstwa Startowa): Odpala całą funkcjonalność aplikacji: tworzy bazę danych, zapełnia ją losowymi danymi i uruchamia GUI.
+
 backend.py – (Warstwa Logiki Biznesowej/Danych): Zawiera wszystkie funkcje Pythona do interakcji z bazą (add_customer, create_order_transaction, itp.).
+
 api.py – (Warstwa API / Endpointy): Definiuje wszystkie trasy Flask i zawiera logikę walidacji/wywołań.
+
 api_client.py – (Warstwa Komunikacji): Ułatwia komunikację między front i backendem.
 # 🖥️ Interfejs Użytkownika (Frontend)
+
 gui_app.py – (Warstwa Prezentacji): Główny plik frontendu. Tworzy okno i inicjuje wszystkie funkcje opisane w views.py.
+
 views.py – (Warstwa Prezentacji): Kod frontendu. Znajdują się tu wszystkie widoki i ich szata graficzna.
 # 🗄️ Baza Danych i Inicjalizacja
+
 database_init.py – (Warstwa Konfiguracyjna): Inicjalizacja: Skrypt do tworzenia schematu bazy danych (tabel).
+
 seed_data.py – (Warstwa Danych): Zapełnia bazę losowymi danymi.
+
 db (np. sklep.db) – (Warstwa Danych): Główny plik bazy danych SQLite.
+
 🛠️ Pliki Pomocnicze i Deployment
+
 main.spec – (Warstwa Budowania): Plik utworzony przy pakowaniu pliku main.py do .exe przy użyciu pyinstallera.
+
 shopp.ico – (Zasoby): Ikona pliku .exe.
+
 test_backend.py – (Warstwa Testowa): Funkcje do testowania backendu, pozostałość po poprzednim etapie projektu.
+
 .venv/ – (Środowisko): Wirtualne środowisko Pythona.
 🛑 Wyłączanie Serwera
 Aby zatrzymać działanie serwera API, naciśnij Ctrl + C w oknie terminala.
